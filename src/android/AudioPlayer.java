@@ -124,8 +124,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         this.tempFiles = new LinkedList<String>();
         this.bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,
                RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
-        System.out.println(bufferSize);
-
     }
 
     /**
@@ -182,11 +180,16 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                             continue;
                         }
                         try {
+                            float highAmplitude = 0;
+                            for (float var : audioData)
+                            {
+                                float abs = Math.abs(var);
+                                highAmplitude = abs > highAmplitude ? abs : highAmplitude;
+                            }
+                            this.maxAmplitude = highAmplitude ;
                             byte finalData[] = new byte[this.bufferSize * this.bytesPerElement];
                             ByteBuffer.wrap(finalData).order(ByteOrder.nativeOrder()).asFloatBuffer().put(audioData);
-                            this.maxAmplitude = (finalData[0] & 0xff) << 8 | finalData[1];
                             file.write(finalData);
-
                         } catch (IOException e) {
                             e.printStackTrace();
                         } catch (NullPointerException n) {
@@ -225,7 +228,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             try {
                 if (stop) {
                     LOG.d(LOG_TAG, "stopping recording");
-                    System.out.println("STOPPING RECORDING");
                     this.setState(STATE.MEDIA_STOPPED);
                     recordingThread.join();
                     recordingThread = null;
@@ -317,7 +319,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      * Resume recording and save to the file specified when recording started.
      */
     public void resumeRecording() {
-        System.out.println("RESUME");
         startRecording(this.audioFile);
     }
 
@@ -331,7 +332,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      * @param file The name of the audio file.
      */
     public void startPlaying(String file) {
-        System.out.println("PLAYBACKKU");
         if (this.readyPlayer(file) && this.player != null) {
             this.player.start();
             this.setState(STATE.MEDIA_RUNNING);
@@ -736,7 +736,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         if (this.recorder != null) {
             try {
                 if (this.state == STATE.MEDIA_RUNNING) {
-                           return (float) (Math.log10((float) (this.maxAmplitude / 32762)));
+                           return (float)this.maxAmplitude;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
