@@ -224,13 +224,15 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      * Stop/Pause recording and save to the file specified when recording started.
      */
     public void stopRecording(boolean stop) {
-        if (this.recorder != null) {
             try {
                 if (stop) {
                     LOG.d(LOG_TAG, "stopping recording");
                     this.setState(STATE.MEDIA_STOPPED);
-                    recordingThread.join();
-                    recordingThread = null;
+                    if (recordingThread != null) // Paused if null
+                    {
+                        recordingThread.join();
+                        recordingThread = null;
+                    }
                     appendHeader(this.audioFile);
                 } else {
                     LOG.d(LOG_TAG, "pause recording");
@@ -241,7 +243,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
     }
 
     public void appendHeader(String fileName)
